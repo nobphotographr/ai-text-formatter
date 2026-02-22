@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI テキストフォーマッター</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>AI テキストフォーマッター</h1>
+    <p class="description">生成AIのテキストを貼り付けると、読みやすく整形します。</p>
+
+    <div class="editor-area">
+      <div class="panel">
+        <label for="input">入力（元テキスト）</label>
+        <textarea id="input" placeholder="ここに生成AIのテキストを貼り付けてください..."></textarea>
+      </div>
+
+      <div class="controls">
+        <button id="format-btn">整形する →</button>
+        <button id="clear-btn" class="secondary">クリア</button>
+      </div>
+
+      <div class="panel">
+        <label for="output">出力（整形後）</label>
+        <textarea id="output" readonly placeholder="整形結果がここに表示されます..."></textarea>
+        <button id="copy-btn" class="copy-btn">コピー</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
