@@ -89,6 +89,58 @@ function breakAtKuten(text) {
   }
 }
 
+// ---- HTMLからプレーンテキストへの変換（ペースト時に使用）----
+
+// HTMLノードを再帰的にたどり、リスト番号などを復元したテキストを返す
+function nodeToText(node) {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+
+  const tag = node.tagName ? node.tagName.toLowerCase() : '';
+  const inner = () => Array.from(node.childNodes).map(nodeToText).join('');
+
+  if (tag === 'ol') {
+    let i = 1;
+    return Array.from(node.children)
+      .filter(li => li.tagName.toLowerCase() === 'li')
+      .map(li => `${i++}. ${nodeToText(li).trim()}`)
+      .join('\n') + '\n';
+  }
+  if (tag === 'ul') {
+    return Array.from(node.children)
+      .filter(li => li.tagName.toLowerCase() === 'li')
+      .map(li => `- ${nodeToText(li).trim()}`)
+      .join('\n') + '\n';
+  }
+  if (tag === 'li') return inner();
+  if (tag === 'br') return '\n';
+  if (tag === 'p')  return inner() + '\n';
+  if (/^h[1-6]$/.test(tag)) return '#'.repeat(Number(tag[1])) + ' ' + inner() + '\n';
+  if (tag === 'strong' || tag === 'b') return `**${inner()}**`;
+  if (tag === 'em'     || tag === 'i') return `*${inner()}*`;
+  return inner();
+}
+
+// クリップボードのHTMLをプレーンテキスト（リスト番号つき）に変換
+function htmlToText(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return nodeToText(div).replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// 入力エリアへのペーストをHTMLで横取り
+document.getElementById('input').addEventListener('paste', (e) => {
+  const html = e.clipboardData.getData('text/html');
+  if (!html) return; // HTMLがなければ通常のペーストに任せる
+  e.preventDefault();
+  const text = htmlToText(html);
+  const textarea = e.target;
+  const start = textarea.selectionStart;
+  const end   = textarea.selectionEnd;
+  textarea.value =
+    textarea.value.slice(0, start) + text + textarea.value.slice(end);
+  textarea.selectionStart = textarea.selectionEnd = start + text.length;
+});
+
 // ---- イベントリスナー ----
 
 document.getElementById('format-btn').addEventListener('click', () => {
