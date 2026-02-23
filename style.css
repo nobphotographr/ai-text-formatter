@@ -1,141 +1,241 @@
-* {
+/* ── カラートークン ── */
+:root {
+  --bg:           #FFFFFF;
+  --bg-subtle:    #F9FAFB;
+  --text:         #111827;
+  --text-muted:   rgba(17,24,39,.55);
+  --border:       rgba(17,24,39,.10);
+  --border-strong:rgba(17,24,39,.16);
+  --accent:       var(--text);
+  --on-accent:    #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:           #0A0A0A;
+    --bg-subtle:    #141414;
+    --text:         #EDEDED;
+    --text-muted:   rgba(237,237,237,.60);
+    --border:       rgba(237,237,237,.14);
+    --border-strong:rgba(237,237,237,.22);
+    --accent:       var(--text);
+    --on-accent:    #0A0A0A;
+  }
+}
+
+/* ── リセット ── */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:focus-visible {
+  outline: 2px solid rgba(17,24,39,.18);
+  outline-offset: 2px;
+}
+@media (prefers-color-scheme: dark) {
+  :focus-visible {
+    outline-color: rgba(237,237,237,.22);
+  }
+}
+
+/* ── ベース ── */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
-  background: #f5f5f5;
-  color: #333;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont,
+               'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
-  padding: 24px 16px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
-.container {
-  max-width: 1200px;
+/* ── ヘッダー ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.header-inner {
+  max-width: 1120px;
   margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
-h1 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 6px;
+.site-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
 }
 
-.description {
-  color: #666;
-  margin-bottom: 24px;
-  font-size: 0.9rem;
+.site-desc {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
+/* ── メイン ── */
+main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ── エディターグリッド ── */
 .editor-area {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 16px;
+  grid-template-columns: 1fr 88px 1fr;
   align-items: start;
 }
 
+/* ── パネル ── */
 .panel {
   display: flex;
   flex-direction: column;
-  position: relative;
+  gap: 8px;
 }
 
 .panel label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #555;
-  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 20px;    /* 20px = controls の padding-top 計算の基準 */
 }
 
+/* ── テキストエリア ── */
 textarea {
   width: 100%;
-  height: 70vh;
-  padding: 14px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  line-height: 1.7;
+  height: 75vh;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.75;
   resize: vertical;
-  background: #fff;
+  background: var(--bg);
+  color: var(--text);
   font-family: inherit;
-  transition: border-color 0.2s;
+  transition: border-color 150ms;
+}
+
+textarea::placeholder {
+  color: var(--text-muted);
 }
 
 textarea:focus {
   outline: none;
-  border-color: #4a90d9;
+  border-color: var(--border-strong);
 }
 
 #output {
-  background: #fafafa;
-  color: #222;
+  background: var(--bg-subtle);
 }
 
+/* ── コントロール（中央列）── */
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 28px;
+  align-items: stretch;
+  gap: 8px;
+  /* label(20px) + gap(8px) = 28px → textarea 上端に揃える */
+  padding: 28px 12px 0;
 }
 
-button {
-  padding: 12px 20px;
+/* Primary ── 整形する */
+#format-btn {
+  height: 44px;
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
-  white-space: nowrap;
+  font-family: inherit;
+  transition: opacity 150ms;
 }
 
-button:active {
-  transform: scale(0.97);
+#format-btn:hover  { opacity: 0.85; }
+#format-btn:active { opacity: 0.70; }
+#format-btn:disabled { opacity: 0.40; cursor: not-allowed; }
+
+/* Secondary ── クリア */
+#clear-btn {
+  height: 36px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 150ms;
 }
 
-#format-btn {
-  background: #4a90d9;
-  color: #fff;
+#clear-btn:hover  { opacity: 0.65; }
+#clear-btn:active { opacity: 0.45; }
+
+/* Secondary ── コピー */
+#copy-btn {
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 150ms;
+  align-self: flex-start;
 }
 
-#format-btn:hover {
-  background: #357abd;
-}
+#copy-btn:hover  { opacity: 0.65; }
+#copy-btn:active { opacity: 0.45; }
 
-button.secondary {
-  background: #e8e8e8;
-  color: #444;
-}
-
-button.secondary:hover {
-  background: #d8d8d8;
-}
-
-.copy-btn {
-  margin-top: 10px;
-  background: #5cb85c;
-  color: #fff;
-  width: 100%;
-}
-
-.copy-btn:hover {
-  background: #4cae4c;
-}
-
-.copy-btn.copied {
-  background: #888;
-}
-
+/* ── モバイル ── */
 @media (max-width: 768px) {
+  header {
+    padding: 0 16px;
+  }
+
+  .header-inner {
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+    padding: 10px 0;
+    height: auto;
+  }
+
+  header {
+    height: auto;
+  }
+
+  main {
+    padding: 16px;
+  }
+
   .editor-area {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .controls {
     flex-direction: row;
-    padding-top: 0;
+    padding: 0;
+    align-items: center;
+    gap: 8px;
   }
 
   #format-btn {
@@ -143,6 +243,6 @@ button.secondary:hover {
   }
 
   textarea {
-    height: 40vh;
+    height: 45vh;
   }
 }

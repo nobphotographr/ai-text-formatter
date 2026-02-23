@@ -4,31 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI テキストフォーマッター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>AI テキストフォーマッター</h1>
-    <p class="description">生成AIのテキストを貼り付けると、読みやすく整形します。</p>
+  <header>
+    <div class="header-inner">
+      <span class="site-title">AI テキストフォーマッター</span>
+      <span class="site-desc">生成AIのテキストを貼り付けると、読みやすく整形します。</span>
+    </div>
+  </header>
 
+  <main>
     <div class="editor-area">
       <div class="panel">
-        <label for="input">入力（元テキスト）</label>
-        <textarea id="input" placeholder="ここに生成AIのテキストを貼り付けてください..."></textarea>
+        <label for="input">入力</label>
+        <textarea id="input" placeholder="ここに生成AIのテキストを貼り付けてください…"></textarea>
       </div>
 
       <div class="controls">
-        <button id="format-btn">整形する →</button>
-        <button id="clear-btn" class="secondary">クリア</button>
+        <button id="format-btn">整形する</button>
+        <button id="clear-btn">クリア</button>
       </div>
 
       <div class="panel">
-        <label for="output">出力（整形後）</label>
-        <textarea id="output" readonly placeholder="整形結果がここに表示されます..."></textarea>
-        <button id="copy-btn" class="copy-btn">コピー</button>
+        <label for="output">出力</label>
+        <textarea id="output" readonly placeholder="整形結果がここに表示されます…"></textarea>
+        <button id="copy-btn">コピー</button>
       </div>
     </div>
-  </div>
+  </main>
 
   <script src="script.js"></script>
 </body>
