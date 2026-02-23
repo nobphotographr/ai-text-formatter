@@ -62,11 +62,11 @@ function breakAtKuten(text) {
   const last = parts[parts.length - 1];
 
   if (last === '') {
-    // 文末が 。 で終わる場合（最後に余分な改行を入れない）
-    return parts.slice(0, -1).join('。\n') + '。';
+    // 文末が 。 で終わる場合（最後に余分な空行を入れない）
+    return parts.slice(0, -1).join('。\n\n') + '。';
   } else {
     // 途中に 。 がある場合
-    return parts.join('。\n');
+    return parts.join('。\n\n');
   }
 }
 
