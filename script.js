@@ -51,7 +51,11 @@ function formatText(input) {
     processedLines.push(prefix + content);
   }
 
-  return processedLines.join('\n');
+  // 行を結合してから、句点の後に空行が来ていない箇所を補完
+  // 例: 「〜だよ。\n次の文」→「〜だよ。\n\n次の文」
+  let result = processedLines.join('\n');
+  result = result.replace(/。\n(?!\n)/g, '。\n\n');
+  return result;
 }
 
 // 句点（。）ごとに改行を入れる
