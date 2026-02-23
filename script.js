@@ -163,17 +163,54 @@ document.getElementById('clear-btn').addEventListener('click', () => {
   document.getElementById('output').value = '';
 });
 
-document.getElementById('copy-btn').addEventListener('click', () => {
+// プレーンテキスト → HTML変換（リッチテキストエディタ用）
+// \n\n を <p> に、\n を <br> に変換し、段落間に空行 <p><br></p> を挿入
+function textToHtml(text) {
+  const esc = s => s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  const blocks = text.split(/\n\n/);
+  const paras  = blocks.map(b =>
+    b.trim() ? `<p>${esc(b).replace(/\n/g, '<br>')}</p>` : '<p><br></p>'
+  );
+
+  // 隣り合う <p> の間に空行 <p><br></p> を挿入
+  const result = [];
+  paras.forEach((p, i) => {
+    result.push(p);
+    if (i < paras.length - 1 && p !== '<p><br></p>' && paras[i + 1] !== '<p><br></p>') {
+      result.push('<p><br></p>');
+    }
+  });
+  return result.join('\n');
+}
+
+document.getElementById('copy-btn').addEventListener('click', async () => {
   const output = document.getElementById('output').value;
   if (!output) return;
 
-  navigator.clipboard.writeText(output).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = 'コピーしました！';
-    btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = 'コピー';
-      btn.classList.remove('copied');
-    }, 2000);
-  });
+  const btn = document.getElementById('copy-btn');
+
+  try {
+    // HTML + プレーンテキストの両形式でコピー
+    // → リッチテキストエディタ（mond等）では HTML が使われ空行が維持される
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html':  new Blob([textToHtml(output)], { type: 'text/html' }),
+        'text/plain': new Blob([output],             { type: 'text/plain' }),
+      }),
+    ]);
+  } catch {
+    // ClipboardItem 非対応ブラウザはプレーンテキストで代替
+    await navigator.clipboard.writeText(output);
+  }
+
+  btn.textContent = 'コピーしました！';
+  btn.classList.add('copied');
+  setTimeout(() => {
+    btn.textContent = 'コピー';
+    btn.classList.remove('copied');
+  }, 2000);
 });
