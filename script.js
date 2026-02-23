@@ -164,27 +164,54 @@ document.getElementById('clear-btn').addEventListener('click', () => {
 });
 
 // プレーンテキスト → HTML変換（リッチテキストエディタ用）
-// \n\n を <p> に、\n を <br> に変換し、段落間に空行 <p><br></p> を挿入
+//
+// 「N. タイトル\n本文...」形式のブロックを <ol><li> に変換する。
+// mond 等のエディタは <p>1. text</p> を自動リスト判定して番号を消すため、
+// 正しい <ol><li> 構造で渡すことで番号を正しく表示させる。
 function textToHtml(text) {
-  const esc = s => s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  const esc     = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const toInner = b => esc(b).replace(/\n/g, '<br>');
 
-  const blocks = text.split(/\n\n/);
-  const paras  = blocks.map(b =>
-    b.trim() ? `<p>${esc(b).replace(/\n/g, '<br>')}</p>` : '<p><br></p>'
-  );
+  const blocks = text.split(/\n\n/).map(b => b.trim()).filter(Boolean);
 
-  // 隣り合う <p> の間に空行 <p><br></p> を挿入
-  const result = [];
-  paras.forEach((p, i) => {
-    result.push(p);
-    if (i < paras.length - 1 && p !== '<p><br></p>' && paras[i + 1] !== '<p><br></p>') {
-      result.push('<p><br></p>');
+  const html = [];
+  let inOl    = false;
+  let liParts = null;       // 現在の <li> に入るコンテンツブロック
+  let prevPara = false;     // 直前が通常段落かどうか（段落間に空行を入れるため）
+
+  const flushLi = () => {
+    if (liParts !== null) {
+      html.push(`<li>${liParts.join('<br><br>')}</li>`);
+      liParts = null;
     }
-  });
-  return result.join('\n');
+  };
+
+  for (const block of blocks) {
+    const listMatch = block.match(/^(\d+)\.\s+([\s\S]+)$/);
+
+    if (listMatch) {
+      // 番号付きリストアイテムの開始
+      flushLi();
+      if (!inOl) { html.push('<ol>'); inOl = true; prevPara = false; }
+      liParts = [toInner(listMatch[2])];
+
+    } else if (inOl) {
+      // リスト内の本文（続き）
+      liParts = liParts ?? [];
+      liParts.push(toInner(block));
+
+    } else {
+      // リスト前の通常段落
+      if (prevPara) html.push('<p><br></p>'); // 段落間の空行
+      html.push(`<p>${toInner(block)}</p>`);
+      prevPara = true;
+    }
+  }
+
+  flushLi();
+  if (inOl) html.push('</ol>');
+
+  return html.join('\n');
 }
 
 document.getElementById('copy-btn').addEventListener('click', async () => {
