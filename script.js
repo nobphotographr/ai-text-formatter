@@ -1,25 +1,77 @@
 // テキスト整形ロジック
-// ※ パターン確認後にここを更新します
 
 function formatText(input) {
-  // TODO: 実際のパターンを確認してから実装
-  // 現在は仮の処理
+  const lines = input.split(/\r?\n/);
+  const processedLines = [];
+  let inCodeBlock = false;
 
-  let text = input;
+  for (const line of lines) {
+    // コードブロック（```）の中は一切加工しない
+    if (/^```/.test(line)) {
+      inCodeBlock = !inCodeBlock;
+      processedLines.push(line);
+      continue;
+    }
+    if (inCodeBlock) {
+      processedLines.push(line);
+      continue;
+    }
 
-  // Step 1: 半角スペースを削除
-  // （マークダウンの記法で必要なスペースは除外する必要があるか確認）
+    // 空行はそのまま維持（段落区切り）
+    if (line.trim() === '') {
+      processedLines.push('');
+      continue;
+    }
 
-  // Step 2: 句点（。）ごとに改行を挿入
+    // マークダウンの構造行はそのまま維持
+    if (
+      /^#{1,6}\s/.test(line) ||         // 見出し: # ## ###
+      /^[-*_]{3,}$/.test(line.trim())    // 水平線: --- *** ___
+    ) {
+      processedLines.push(line);
+      continue;
+    }
 
-  // Step 3: 既存の改行を維持
+    // リスト・引用のプレフィックスを取り出して別途処理
+    let prefix = '';
+    let content = line;
+    const prefixMatch = line.match(/^(\s*(?:[-*+]|\d+\.)\s+|>+\s*)/);
+    if (prefixMatch) {
+      prefix = prefixMatch[1];
+      content = line.slice(prefix.length);
+    }
 
-  // Step 4: マークダウン記法を維持
+    // Step 1: 半角スペース（ASCII U+0020）を削除
+    //         全角スペース（U+3000）は残す
+    content = content.replace(/ /g, '');
 
-  return text;
+    // Step 2: 句点（。）の後に改行を挿入
+    content = breakAtKuten(content);
+
+    processedLines.push(prefix + content);
+  }
+
+  return processedLines.join('\n');
 }
 
-// イベントリスナー
+// 句点（。）ごとに改行を入れる
+function breakAtKuten(text) {
+  if (!text.includes('。')) return text;
+
+  const parts = text.split('。');
+  const last = parts[parts.length - 1];
+
+  if (last === '') {
+    // 文末が 。 で終わる場合（最後に余分な改行を入れない）
+    return parts.slice(0, -1).join('。\n') + '。';
+  } else {
+    // 途中に 。 がある場合
+    return parts.join('。\n');
+  }
+}
+
+// ---- イベントリスナー ----
+
 document.getElementById('format-btn').addEventListener('click', () => {
   const input = document.getElementById('input').value;
   if (!input.trim()) return;
