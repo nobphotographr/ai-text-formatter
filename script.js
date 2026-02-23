@@ -45,8 +45,10 @@ function formatText(input) {
     //         全角スペース（U+3000）は残す
     content = content.replace(/ /g, '');
 
-    // Step 2: 句点（。）の後に改行を挿入
+    // Step 2: 「」の中の句点を一時的に保護してから改行を挿入
+    content = protectKuten(content);
     content = breakAtKuten(content);
+    content = content.replace(/\x01/g, '。'); // 保護を解除
 
     processedLines.push(prefix + content);
   }
@@ -55,6 +57,19 @@ function formatText(input) {
   // 例: 「〜だよ。\n次の文」→「〜だよ。\n\n次の文」
   let result = processedLines.join('\n');
   result = result.replace(/。\n(?!\n)/g, '。\n\n');
+  return result;
+}
+
+// 「」の中の句点を \x01 に置き換えて保護する（ネスト対応）
+function protectKuten(text) {
+  let depth = 0;
+  let result = '';
+  for (const ch of text) {
+    if (ch === '「') { depth++; result += ch; }
+    else if (ch === '」') { if (depth > 0) depth--; result += ch; }
+    else if (ch === '。' && depth > 0) { result += '\x01'; } // 保護
+    else { result += ch; }
+  }
   return result;
 }
 
