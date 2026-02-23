@@ -41,6 +41,15 @@ function formatText(input) {
       content = line.slice(prefix.length);
     }
 
+    // 番号付きリスト（1. 2. ...）の場合、最初の半角スペースを改行に変換
+    // → 「1. タイトル 本文」の タイトルと本文を分離する
+    if (/^\s*\d+\.\s/.test(prefix)) {
+      const firstSpace = content.indexOf(' ');
+      if (firstSpace !== -1) {
+        content = content.slice(0, firstSpace) + '\n' + content.slice(firstSpace + 1);
+      }
+    }
+
     // Step 1: 半角スペース（ASCII U+0020）を削除
     //         全角スペース（U+3000）は残す
     content = content.replace(/ /g, '');
