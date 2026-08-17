@@ -1,243 +1,225 @@
-// テキスト整形ロジック
+'use strict';
 
-function formatText(input) {
-  const lines = input.split(/\r?\n/);
-  const processedLines = [];
-  let inCodeBlock = false;
+const { PRESETS, formatText } = window.TextFormatterCore;
 
-  for (const line of lines) {
-    // コードブロック（```）の中は一切加工しない
-    if (/^```/.test(line)) {
-      inCodeBlock = !inCodeBlock;
-      processedLines.push(line);
-      continue;
-    }
-    if (inCodeBlock) {
-      processedLines.push(line);
-      continue;
-    }
+const elements = {
+  input: document.getElementById('input'),
+  output: document.getElementById('output'),
+  inputCount: document.getElementById('input-count'),
+  outputCount: document.getElementById('output-count'),
+  format: document.getElementById('format-btn'),
+  clear: document.getElementById('clear-btn'),
+  copy: document.getElementById('copy-btn'),
+  reuse: document.getElementById('reuse-btn'),
+  sample: document.getElementById('sample-btn'),
+  spacingMode: document.getElementById('spacing-mode'),
+  sentenceBreaks: document.getElementById('sentence-breaks'),
+  normalizeBlanks: document.getElementById('normalize-blanks'),
+  trimLines: document.getElementById('trim-lines'),
+  status: document.getElementById('result-status'),
+  toast: document.getElementById('toast'),
+  presets: Array.from(document.querySelectorAll('[data-preset]')),
+};
 
-    // 空行はそのまま維持（段落区切り）
-    if (line.trim() === '') {
-      processedLines.push('');
-      continue;
-    }
+let toastTimer;
 
-    // マークダウンの構造行はそのまま維持
-    if (
-      /^#{1,6}\s/.test(line) ||         // 見出し: # ## ###
-      /^[-*_]{3,}$/.test(line.trim())    // 水平線: --- *** ___
-    ) {
-      processedLines.push(line);
-      continue;
-    }
-
-    // リスト・引用のプレフィックスを取り出して別途処理
-    let prefix = '';
-    let content = line;
-    const prefixMatch = line.match(/^(\s*(?:[-*+]|\d+\.)\s+|>+\s*)/);
-    if (prefixMatch) {
-      prefix = prefixMatch[1];
-      content = line.slice(prefix.length);
-    }
-
-    // 番号付きリスト（1. 2. ...）の場合、最初の半角スペースを改行に変換
-    // → 「1. タイトル 本文」の タイトルと本文を分離する
-    if (/^\s*\d+\.\s/.test(prefix)) {
-      const firstSpace = content.indexOf(' ');
-      if (firstSpace !== -1) {
-        content = content.slice(0, firstSpace) + '\n' + content.slice(firstSpace + 1);
-      }
-    }
-
-    // Step 1: 半角スペース（ASCII U+0020）を削除
-    //         全角スペース（U+3000）は残す
-    content = content.replace(/ /g, '');
-
-    // Step 2: 「」の中の句点を一時的に保護してから改行を挿入
-    content = protectKuten(content);
-    content = breakAtKuten(content);
-    content = content.replace(/\x01/g, '。'); // 保護を解除
-
-    processedLines.push(prefix + content);
-  }
-
-  // 行を結合してから、句点の後に空行が来ていない箇所を補完
-  // 例: 「〜だよ。\n次の文」→「〜だよ。\n\n次の文」
-  let result = processedLines.join('\n');
-  result = result.replace(/。\n(?!\n)/g, '。\n\n');
-  return result;
+function getOptions() {
+  return {
+    spacingMode: elements.spacingMode.value,
+    sentenceBreaks: elements.sentenceBreaks.checked,
+    normalizeBlanks: elements.normalizeBlanks.checked,
+    trimLines: elements.trimLines.checked,
+  };
 }
 
-// 「」の中の句点を \x01 に置き換えて保護する（ネスト対応）
-function protectKuten(text) {
-  let depth = 0;
-  let result = '';
-  for (const ch of text) {
-    if (ch === '「') { depth++; result += ch; }
-    else if (ch === '」') { if (depth > 0) depth--; result += ch; }
-    else if (ch === '。' && depth > 0) { result += '\x01'; } // 保護
-    else { result += ch; }
-  }
-  return result;
+function applyPreset(name) {
+  const preset = PRESETS[name] || PRESETS.safe;
+  elements.spacingMode.value = preset.spacingMode;
+  elements.sentenceBreaks.checked = preset.sentenceBreaks;
+  elements.normalizeBlanks.checked = preset.normalizeBlanks;
+  elements.trimLines.checked = preset.trimLines;
+  elements.presets.forEach((button) => {
+    const active = button.dataset.preset === name;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
 }
 
-// 句点（。）ごとに改行を入れる
-function breakAtKuten(text) {
-  if (!text.includes('。')) return text;
+function markCustomOptions() {
+  const options = getOptions();
+  const matchingPreset = Object.entries(PRESETS).find(([, preset]) => (
+    preset.spacingMode === options.spacingMode
+    && preset.sentenceBreaks === options.sentenceBreaks
+    && preset.normalizeBlanks === options.normalizeBlanks
+    && preset.trimLines === options.trimLines
+  ));
 
-  const parts = text.split('。');
-  const last = parts[parts.length - 1];
+  elements.presets.forEach((button) => {
+    const active = matchingPreset && button.dataset.preset === matchingPreset[0];
+    button.classList.toggle('is-active', Boolean(active));
+    button.setAttribute('aria-pressed', String(Boolean(active)));
+  });
+}
 
-  if (last === '') {
-    // 文末が 。 で終わる場合（最後に余分な空行を入れない）
-    return parts.slice(0, -1).join('。\n\n') + '。';
+function updateCounts() {
+  elements.inputCount.textContent = String(Array.from(elements.input.value).length);
+  elements.outputCount.textContent = String(Array.from(elements.output.value).length);
+  const hasOutput = elements.output.value.length > 0;
+  elements.copy.disabled = !hasOutput;
+  elements.reuse.disabled = !hasOutput;
+}
+
+function setStatus(message, hasResult = false) {
+  elements.status.lastElementChild.textContent = message;
+  elements.status.classList.toggle('has-result', hasResult);
+}
+
+function showToast(message) {
+  window.clearTimeout(toastTimer);
+  elements.toast.textContent = message;
+  elements.toast.classList.add('is-visible');
+  toastTimer = window.setTimeout(() => elements.toast.classList.remove('is-visible'), 2200);
+}
+
+function runFormatter() {
+  const input = elements.input.value;
+  if (!input.trim()) {
+    setStatus('文章を入力してください');
+    elements.input.focus();
+    return;
+  }
+
+  const output = formatText(input, getOptions());
+  elements.output.value = output;
+  updateCounts();
+
+  if (output === input.trim()) {
+    setStatus('変更する箇所はありませんでした', true);
   } else {
-    // 途中に 。 がある場合
-    return parts.join('。\n\n');
+    setStatus('整形が完了しました。内容を確認してコピーしてください', true);
+  }
+
+  if (window.matchMedia('(max-width: 900px)').matches) {
+    elements.output.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
-// ---- HTMLからプレーンテキストへの変換（ペースト時に使用）----
-
-// HTMLノードを再帰的にたどり、リスト番号などを復元したテキストを返す
 function nodeToText(node) {
   if (node.nodeType === Node.TEXT_NODE) return node.textContent;
-
   const tag = node.tagName ? node.tagName.toLowerCase() : '';
   const inner = () => Array.from(node.childNodes).map(nodeToText).join('');
 
-  if (tag === 'ol') {
-    let i = 1;
+  if (tag === 'ol' || tag === 'ul') {
     return Array.from(node.children)
-      .filter(li => li.tagName.toLowerCase() === 'li')
-      .map(li => `${i++}. ${nodeToText(li).trim()}`)
-      .join('\n') + '\n';
-  }
-  if (tag === 'ul') {
-    return Array.from(node.children)
-      .filter(li => li.tagName.toLowerCase() === 'li')
-      .map(li => `- ${nodeToText(li).trim()}`)
+      .filter((child) => child.tagName.toLowerCase() === 'li')
+      .map((child, index) => `${tag === 'ol' ? `${index + 1}.` : '-'} ${nodeToText(child).trim()}`)
       .join('\n') + '\n';
   }
   if (tag === 'li') return inner();
   if (tag === 'br') return '\n';
-  if (tag === 'p')  return inner() + '\n';
-  if (/^h[1-6]$/.test(tag)) return '#'.repeat(Number(tag[1])) + ' ' + inner() + '\n';
+  if (tag === 'p' || tag === 'div') return inner() + '\n';
+  if (/^h[1-6]$/.test(tag)) return `${'#'.repeat(Number(tag[1]))} ${inner()}\n`;
   if (tag === 'strong' || tag === 'b') return `**${inner()}**`;
-  if (tag === 'em'     || tag === 'i') return `*${inner()}*`;
+  if (tag === 'em' || tag === 'i') return `*${inner()}*`;
+  if (tag === 'a') return `[${inner()}](${node.href || ''})`;
   return inner();
 }
 
-// クリップボードのHTMLをプレーンテキスト（リスト番号つき）に変換
 function htmlToText(html) {
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  return nodeToText(div).replace(/\n{3,}/g, '\n\n').trim();
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  return nodeToText(wrapper).replace(/\n{3,}/g, '\n\n').trim();
 }
 
-// 入力エリアへのペーストをHTMLで横取り
-document.getElementById('input').addEventListener('paste', (e) => {
-  const html = e.clipboardData.getData('text/html');
-  if (!html) return; // HTMLがなければ通常のペーストに任せる
-  e.preventDefault();
-  const text = htmlToText(html);
-  const textarea = e.target;
-  const start = textarea.selectionStart;
-  const end   = textarea.selectionEnd;
-  textarea.value =
-    textarea.value.slice(0, start) + text + textarea.value.slice(end);
-  textarea.selectionStart = textarea.selectionEnd = start + text.length;
-});
-
-// ---- イベントリスナー ----
-
-document.getElementById('format-btn').addEventListener('click', () => {
-  const input = document.getElementById('input').value;
-  if (!input.trim()) return;
-  document.getElementById('output').value = formatText(input);
-});
-
-document.getElementById('clear-btn').addEventListener('click', () => {
-  document.getElementById('input').value = '';
-  document.getElementById('output').value = '';
-});
-
-// プレーンテキスト → HTML変換（リッチテキストエディタ用）
-//
-// 「N. タイトル\n本文...」形式のブロックを <ol><li> に変換する。
-// mond 等のエディタは <p>1. text</p> を自動リスト判定して番号を消すため、
-// 正しい <ol><li> 構造で渡すことで番号を正しく表示させる。
 function textToHtml(text) {
-  const esc     = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const toInner = b => esc(b).replace(/\n/g, '<br>');
-
-  const blocks = text.split(/\n\n/).map(b => b.trim()).filter(Boolean);
-
-  const html = [];
-  let inOl    = false;
-  let liParts = null;       // 現在の <li> に入るコンテンツブロック
-  let prevPara = false;     // 直前が通常段落かどうか（段落間に空行を入れるため）
-
-  const flushLi = () => {
-    if (liParts !== null) {
-      html.push(`<li>${liParts.join('<br><br>')}</li>`);
-      liParts = null;
-    }
-  };
-
-  for (const block of blocks) {
-    const listMatch = block.match(/^(\d+)\.\s+([\s\S]+)$/);
-
-    if (listMatch) {
-      // 番号付きリストアイテムの開始
-      flushLi();
-      if (!inOl) { html.push('<ol>'); inOl = true; prevPara = false; }
-      liParts = [toInner(listMatch[2])];
-
-    } else if (inOl) {
-      // リスト内の本文（続き）
-      liParts = liParts ?? [];
-      liParts.push(toInner(block));
-
-    } else {
-      // リスト前の通常段落
-      if (prevPara) html.push('<p><br></p>'); // 段落間の空行
-      html.push(`<p>${toInner(block)}</p>`);
-      prevPara = true;
-    }
-  }
-
-  flushLi();
-  if (inOl) html.push('</ol>');
-
-  return html.join('\n');
+  const escapeHtml = (value) => value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return text
+    .split(/\n\n+/)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+    .join('');
 }
 
-document.getElementById('copy-btn').addEventListener('click', async () => {
-  const output = document.getElementById('output').value;
+elements.presets.forEach((button) => {
+  button.addEventListener('click', () => applyPreset(button.dataset.preset));
+});
+
+[elements.spacingMode, elements.sentenceBreaks, elements.normalizeBlanks, elements.trimLines]
+  .forEach((control) => control.addEventListener('change', markCustomOptions));
+
+elements.input.addEventListener('input', () => {
+  updateCounts();
+  if (!elements.input.value && !elements.output.value) setStatus('入力待ちです');
+});
+
+elements.output.addEventListener('input', updateCounts);
+
+elements.input.addEventListener('paste', (event) => {
+  const html = event.clipboardData?.getData('text/html');
+  if (!html) return;
+  event.preventDefault();
+  const text = htmlToText(html);
+  const start = elements.input.selectionStart;
+  const end = elements.input.selectionEnd;
+  elements.input.setRangeText(text, start, end, 'end');
+  elements.input.dispatchEvent(new Event('input'));
+});
+
+elements.format.addEventListener('click', runFormatter);
+
+elements.input.addEventListener('keydown', (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    event.preventDefault();
+    runFormatter();
+  }
+});
+
+elements.clear.addEventListener('click', () => {
+  elements.input.value = '';
+  elements.output.value = '';
+  updateCounts();
+  setStatus('入力待ちです');
+  elements.input.focus();
+});
+
+elements.sample.addEventListener('click', () => {
+  elements.input.value = `生成 AI を使うと、文章の間に 不自然な 空白が入ることがあります。ですが、URL https://example.com/tools や Markdown の [リンク](https://example.com) は壊したくありません。\n\n## 確認項目\n\n- 日本語 の空白を整える\n- \`inline code\` は変更しない\n- 最後に内容を確認する`;
+  updateCounts();
+  setStatus('サンプルを入力しました');
+});
+
+elements.reuse.addEventListener('click', () => {
+  elements.input.value = elements.output.value;
+  elements.output.value = '';
+  updateCounts();
+  setStatus('結果を入力欄へ戻しました');
+  elements.input.focus();
+});
+
+elements.copy.addEventListener('click', async () => {
+  const output = elements.output.value;
   if (!output) return;
 
-  const btn = document.getElementById('copy-btn');
-
   try {
-    // HTML + プレーンテキストの両形式でコピー
-    // → リッチテキストエディタ（mond等）では HTML が使われ空行が維持される
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        'text/html':  new Blob([textToHtml(output)], { type: 'text/html' }),
-        'text/plain': new Blob([output],             { type: 'text/plain' }),
-      }),
-    ]);
+    if (window.ClipboardItem && navigator.clipboard?.write) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([output], { type: 'text/plain' }),
+          'text/html': new Blob([textToHtml(output)], { type: 'text/html' }),
+        }),
+      ]);
+    } else {
+      await navigator.clipboard.writeText(output);
+    }
+    showToast('整形した文章をコピーしました');
   } catch {
-    // ClipboardItem 非対応ブラウザはプレーンテキストで代替
-    await navigator.clipboard.writeText(output);
+    elements.output.select();
+    document.execCommand('copy');
+    showToast('整形した文章をコピーしました');
   }
-
-  btn.textContent = 'コピーしました！';
-  btn.classList.add('copied');
-  setTimeout(() => {
-    btn.textContent = 'コピー';
-    btn.classList.remove('copied');
-  }, 2000);
 });
+
+applyPreset('safe');
+updateCounts();

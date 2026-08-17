@@ -2,41 +2,158 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI テキストフォーマッター</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2efe7">
+  <meta name="description" content="生成AIの下書きに混ざった不自然な空白や改行を、文章を壊さず読みやすく整えるブラウザツール。入力内容は外部へ送信しません。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="文章の間を、整える。｜iruagaru">
+  <meta property="og:description" content="AIの下書きを、読みやすい日本語へ。ブラウザ内だけで安全に整形します。">
+  <meta property="og:url" content="https://xpreview.iruagaru.com/text/">
+  <meta property="og:image" content="https://xpreview.iruagaru.com/text/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="文章の間を、整える。｜iruagaru">
+  <meta name="twitter:description" content="AIの下書きを、読みやすい日本語へ。ブラウザ内だけで安全に整形します。">
+  <meta name="twitter:image" content="https://xpreview.iruagaru.com/text/og.png">
+  <link rel="canonical" href="https://xpreview.iruagaru.com/text/">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="favicon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>文章の間を、整える。｜iruagaru</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <span class="site-title">AI テキストフォーマッター</span>
-      <span class="site-desc">生成AIのテキストを貼り付けると、読みやすく整形します。</span>
-    </div>
+  <header class="site-header">
+    <a class="brand" href="../" aria-label="iruagaru photo toolsへ戻る">IRUAGARU / TEXT TOOLS</a>
+    <span class="header-note">BROWSER ONLY</span>
   </header>
 
   <main>
-    <div class="editor-area">
-      <div class="panel">
-        <label for="input">入力</label>
-        <textarea id="input" placeholder="ここに生成AIのテキストを貼り付けてください…"></textarea>
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">FORMAT / WITHOUT BREAKING</p>
+      <h1 id="page-title">文章の間を、<br>整える。</h1>
+      <div class="hero-copy">
+        <p>生成AIの下書きに混ざった、不自然な空白や改行を読みやすく整えます。</p>
+        <p class="privacy-copy"><span aria-hidden="true"></span>入力した文章は外部へ送信しません。</p>
+      </div>
+    </section>
+
+    <section class="workspace" aria-labelledby="workspace-title">
+      <div class="workspace-head">
+        <div>
+          <p class="section-number">TOOL / 01</p>
+          <h2 id="workspace-title">整え方を選ぶ</h2>
+        </div>
+        <p class="workspace-lead">まずは「安全整形」がおすすめです。英語・URL・コード・Markdownの構造は保護します。</p>
       </div>
 
-      <div class="controls">
-        <button id="format-btn">整形する</button>
-        <button id="clear-btn">クリア</button>
+      <div class="preset-list" role="group" aria-label="整形プリセット">
+        <button class="preset is-active" type="button" data-preset="safe" aria-pressed="true">
+          <span class="preset-index">01</span>
+          <span class="preset-name">安全整形</span>
+          <span class="preset-desc">文章の形を保ったまま、明らかな空白だけ修正</span>
+        </button>
+        <button class="preset" type="button" data-preset="note" aria-pressed="false">
+          <span class="preset-index">02</span>
+          <span class="preset-name">note</span>
+          <span class="preset-desc">句点ごとに余白をつくり、ゆっくり読める形に</span>
+        </button>
+        <button class="preset" type="button" data-preset="social" aria-pressed="false">
+          <span class="preset-index">03</span>
+          <span class="preset-name">SNS</span>
+          <span class="preset-desc">余分な空行を抑え、投稿しやすい密度に</span>
+        </button>
+        <button class="preset" type="button" data-preset="markdown" aria-pressed="false">
+          <span class="preset-index">04</span>
+          <span class="preset-name">Markdown</span>
+          <span class="preset-desc">見出し・リスト・リンク・コードを維持して整理</span>
+        </button>
       </div>
 
-      <div class="panel">
-        <label for="output">出力</label>
-        <textarea id="output" readonly placeholder="整形結果がここに表示されます…"></textarea>
-        <button id="copy-btn">コピー</button>
+      <details class="advanced">
+        <summary>細かく調整する <span>OPTION</span></summary>
+        <div class="advanced-grid">
+          <label class="field-option" for="spacing-mode">
+            <span>日本語の空白</span>
+            <select id="spacing-mode">
+              <option value="safe">日本語同士だけ削除</option>
+              <option value="strong">英数字との間も削除</option>
+              <option value="none">変更しない</option>
+            </select>
+          </label>
+          <label class="check-option">
+            <input id="sentence-breaks" type="checkbox">
+            <span>句点ごとに空行を入れる</span>
+          </label>
+          <label class="check-option">
+            <input id="normalize-blanks" type="checkbox" checked>
+            <span>連続する空行を整理する</span>
+          </label>
+          <label class="check-option">
+            <input id="trim-lines" type="checkbox" checked>
+            <span>行末の空白を削除する</span>
+          </label>
+        </div>
+      </details>
+
+      <div class="editor-grid">
+        <section class="editor-panel" aria-labelledby="input-label">
+          <div class="editor-label-row">
+            <label id="input-label" for="input">INPUT</label>
+            <span><strong id="input-count">0</strong> characters</span>
+          </div>
+          <textarea id="input" spellcheck="true" placeholder="ここに文章を貼り付けてください。&#10;&#10;例：これは AI が生成した 文章です。 URL や Markdown は、そのまま保護されます。"></textarea>
+          <button id="sample-btn" class="text-button" type="button">サンプルを入れる</button>
+        </section>
+
+        <div class="format-action">
+          <button id="format-btn" type="button">
+            <span>整形する</span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <button id="clear-btn" class="text-button" type="button">すべて消す</button>
+        </div>
+
+        <section class="editor-panel" aria-labelledby="output-label">
+          <div class="editor-label-row">
+            <label id="output-label" for="output">OUTPUT</label>
+            <span><strong id="output-count">0</strong> characters</span>
+          </div>
+          <textarea id="output" spellcheck="true" placeholder="整形した文章がここに表示されます。"></textarea>
+          <div class="output-actions">
+            <button id="copy-btn" class="copy-button" type="button" disabled>結果をコピー</button>
+            <button id="reuse-btn" class="text-button" type="button" disabled>結果を再編集</button>
+          </div>
+        </section>
       </div>
-    </div>
+
+      <div id="result-status" class="result-status" aria-live="polite">
+        <span class="status-mark" aria-hidden="true"></span>
+        <span>入力待ちです</span>
+      </div>
+    </section>
+
+    <section class="notes" aria-label="ツールについて">
+      <p class="section-number">ABOUT / 02</p>
+      <div class="notes-grid">
+        <h2>消すのは、<br>余計な間だけ。</h2>
+        <div>
+          <p>コードブロック、インラインコード、URL、メールアドレス、Markdownリンクを一時的に保護してから整形します。</p>
+          <p>意味や表現の書き換え、校正、AI判定は行いません。最後に必ず内容をご確認ください。</p>
+        </div>
+      </div>
+    </section>
   </main>
 
+  <footer>
+    <span>IRUAGARU / TEXT TOOLS</span>
+    <span>LOCAL PROCESSING — NO UPLOAD</span>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="formatter-core.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
