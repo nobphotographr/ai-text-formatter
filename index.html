@@ -44,59 +44,49 @@
       <div class="workspace-head">
         <div>
           <p class="section-number">TOOL / 01</p>
-          <h2 id="workspace-title">整え方を選ぶ</h2>
+          <h2 id="workspace-title">整える内容を選ぶ</h2>
         </div>
-        <p class="workspace-lead">まずは「安全整形」がおすすめです。英語・URL・コード・Markdownの構造は保護します。</p>
+        <p class="workspace-lead">必要な項目だけチェックしてください。URL・コード・Markdownの構造は、設定にかかわらず保護します。</p>
       </div>
 
-      <div class="preset-list" role="group" aria-label="整形プリセット">
-        <button class="preset is-active" type="button" data-preset="safe" aria-pressed="true">
-          <span class="preset-index">01</span>
-          <span class="preset-name">安全整形</span>
-          <span class="preset-desc">文章の形を保ったまま、明らかな空白だけ修正</span>
-        </button>
-        <button class="preset" type="button" data-preset="note" aria-pressed="false">
-          <span class="preset-index">02</span>
-          <span class="preset-name">note</span>
-          <span class="preset-desc">句点ごとに余白をつくり、ゆっくり読める形に</span>
-        </button>
-        <button class="preset" type="button" data-preset="social" aria-pressed="false">
-          <span class="preset-index">03</span>
-          <span class="preset-name">SNS</span>
-          <span class="preset-desc">余分な空行を抑え、投稿しやすい密度に</span>
-        </button>
-        <button class="preset" type="button" data-preset="markdown" aria-pressed="false">
-          <span class="preset-index">04</span>
-          <span class="preset-name">Markdown</span>
-          <span class="preset-desc">見出し・リスト・リンク・コードを維持して整理</span>
-        </button>
+      <div class="rule-list" role="group" aria-label="整形する内容">
+        <label class="rule-option">
+          <input id="clean-spacing" type="checkbox" checked>
+          <span class="rule-check" aria-hidden="true"></span>
+          <span class="rule-copy">
+            <strong>日本語の不要な空白を削除</strong>
+            <small>「これは 文章です」を「これは文章です」にします</small>
+          </span>
+          <span class="rule-index">01</span>
+        </label>
+        <label class="rule-option">
+          <input id="tighten-latin" type="checkbox">
+          <span class="rule-check" aria-hidden="true"></span>
+          <span class="rule-copy">
+            <strong>英数字との間も詰める</strong>
+            <small>「生成 AI」を「生成AI」にします</small>
+          </span>
+          <span class="rule-index">02</span>
+        </label>
+        <label class="rule-option">
+          <input id="sentence-breaks" type="checkbox">
+          <span class="rule-check" aria-hidden="true"></span>
+          <span class="rule-copy">
+            <strong>文末（。！？）ごとに1行空ける</strong>
+            <small>noteなど、余白をつけて読ませたい文章向けです</small>
+          </span>
+          <span class="rule-index">03</span>
+        </label>
+        <label class="rule-option">
+          <input id="normalize-blanks" type="checkbox" checked>
+          <span class="rule-check" aria-hidden="true"></span>
+          <span class="rule-copy">
+            <strong>連続する空行を整理</strong>
+            <small>3行以上の空きを、1行分の空きに揃えます</small>
+          </span>
+          <span class="rule-index">04</span>
+        </label>
       </div>
-
-      <details class="advanced">
-        <summary>細かく調整する <span>OPTION</span></summary>
-        <div class="advanced-grid">
-          <label class="field-option" for="spacing-mode">
-            <span>日本語の空白</span>
-            <select id="spacing-mode">
-              <option value="safe">日本語同士だけ削除</option>
-              <option value="strong">英数字との間も削除</option>
-              <option value="none">変更しない</option>
-            </select>
-          </label>
-          <label class="check-option">
-            <input id="sentence-breaks" type="checkbox">
-            <span>句点ごとに空行を入れる</span>
-          </label>
-          <label class="check-option">
-            <input id="normalize-blanks" type="checkbox" checked>
-            <span>連続する空行を整理する</span>
-          </label>
-          <label class="check-option">
-            <input id="trim-lines" type="checkbox" checked>
-            <span>行末の空白を削除する</span>
-          </label>
-        </div>
-      </details>
 
       <div class="editor-grid">
         <section class="editor-panel" aria-labelledby="input-label">

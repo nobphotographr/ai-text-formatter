@@ -1,6 +1,6 @@
 'use strict';
 
-const { PRESETS, formatText } = window.TextFormatterCore;
+const { formatText } = window.TextFormatterCore;
 
 const elements = {
   input: document.getElementById('input'),
@@ -12,53 +12,30 @@ const elements = {
   copy: document.getElementById('copy-btn'),
   reuse: document.getElementById('reuse-btn'),
   sample: document.getElementById('sample-btn'),
-  spacingMode: document.getElementById('spacing-mode'),
+  cleanSpacing: document.getElementById('clean-spacing'),
+  tightenLatin: document.getElementById('tighten-latin'),
   sentenceBreaks: document.getElementById('sentence-breaks'),
   normalizeBlanks: document.getElementById('normalize-blanks'),
-  trimLines: document.getElementById('trim-lines'),
   status: document.getElementById('result-status'),
   toast: document.getElementById('toast'),
-  presets: Array.from(document.querySelectorAll('[data-preset]')),
 };
 
 let toastTimer;
 
 function getOptions() {
   return {
-    spacingMode: elements.spacingMode.value,
+    spacingMode: elements.cleanSpacing.checked
+      ? (elements.tightenLatin.checked ? 'strong' : 'safe')
+      : 'none',
     sentenceBreaks: elements.sentenceBreaks.checked,
     normalizeBlanks: elements.normalizeBlanks.checked,
-    trimLines: elements.trimLines.checked,
+    trimLines: true,
   };
 }
 
-function applyPreset(name) {
-  const preset = PRESETS[name] || PRESETS.safe;
-  elements.spacingMode.value = preset.spacingMode;
-  elements.sentenceBreaks.checked = preset.sentenceBreaks;
-  elements.normalizeBlanks.checked = preset.normalizeBlanks;
-  elements.trimLines.checked = preset.trimLines;
-  elements.presets.forEach((button) => {
-    const active = button.dataset.preset === name;
-    button.classList.toggle('is-active', active);
-    button.setAttribute('aria-pressed', String(active));
-  });
-}
-
-function markCustomOptions() {
-  const options = getOptions();
-  const matchingPreset = Object.entries(PRESETS).find(([, preset]) => (
-    preset.spacingMode === options.spacingMode
-    && preset.sentenceBreaks === options.sentenceBreaks
-    && preset.normalizeBlanks === options.normalizeBlanks
-    && preset.trimLines === options.trimLines
-  ));
-
-  elements.presets.forEach((button) => {
-    const active = matchingPreset && button.dataset.preset === matchingPreset[0];
-    button.classList.toggle('is-active', Boolean(active));
-    button.setAttribute('aria-pressed', String(Boolean(active)));
-  });
+function updateRuleAvailability() {
+  elements.tightenLatin.disabled = !elements.cleanSpacing.checked;
+  elements.tightenLatin.closest('.rule-option').classList.toggle('is-disabled', !elements.cleanSpacing.checked);
 }
 
 function updateCounts() {
@@ -142,12 +119,8 @@ function textToHtml(text) {
     .join('');
 }
 
-elements.presets.forEach((button) => {
-  button.addEventListener('click', () => applyPreset(button.dataset.preset));
-});
-
-[elements.spacingMode, elements.sentenceBreaks, elements.normalizeBlanks, elements.trimLines]
-  .forEach((control) => control.addEventListener('change', markCustomOptions));
+[elements.cleanSpacing, elements.tightenLatin, elements.sentenceBreaks, elements.normalizeBlanks]
+  .forEach((control) => control.addEventListener('change', updateRuleAvailability));
 
 elements.input.addEventListener('input', () => {
   updateCounts();
@@ -221,5 +194,5 @@ elements.copy.addEventListener('click', async () => {
   }
 });
 
-applyPreset('safe');
+updateRuleAvailability();
 updateCounts();
